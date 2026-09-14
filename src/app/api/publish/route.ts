@@ -27,8 +27,6 @@ function htmlToMarkdown(htmlContent: string): string {
   return md.trim();
 }
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   try {
     // Check authorization: Session cookie OR Bearer API token
