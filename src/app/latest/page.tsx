@@ -105,7 +105,7 @@ export default function LatestPage() {
                   <span>{formatDate(article.publishedAt)}</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {article.readTimeMinutes || 5} min read
+                    {article.readTimeMinutes || 6} min read
                   </span>
                 </div>
               </div>
