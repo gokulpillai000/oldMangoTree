@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60" fill="none">
+  <!-- Tree Icon -->
+  <path d="M24 48V32M24 32C18 32 12 28 12 20C12 12 20 8 24 14C28 8 36 12 36 20C36 28 30 32 24 32Z" stroke="#8f3844" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text Logo -->
+  <text x="48" y="38" font-family="Georgia, serif" font-weight="bold" font-size="22" fill="#1e1e1e" dark-fill="#ffffff">
+    oldman<tspan fill="#8f3844">go</tspan>tree
+  </text>
+  <text x="48" y="52" font-family="sans-serif" font-size="9" letter-spacing="2" fill="#752b36" font-weight="600">
+    DIGITAL WEBZINE &amp; MEDIA
+  </text>
+</svg>

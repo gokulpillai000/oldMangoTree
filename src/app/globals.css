@@ -1,0 +1,100 @@
+@font-face {
+  font-family: 'DzainTrueCopy';
+  src: url('/fonts/DzainTrueCopy-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DzainTrueCopy';
+  src: url('/fonts/DzainTrueCopy-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DzainTrueCopy';
+  src: url('/fonts/DzainTrueCopy-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Dzain-TrueCopy Text';
+  src: url('/fonts/DzainTrueCopy-Text.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DzainTrueCopy Inline';
+  src: url('/fonts/DzainTrueCopy-Inline.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  @media (min-width: 480px) {
+    html {
+      font-size: 17px;
+    }
+  }
+  @media (min-width: 640px) {
+    html {
+      font-size: 18px;
+    }
+  }
+  body {
+    @apply bg-paper-light dark:bg-paper-dark text-neutral-900 dark:text-neutral-100 font-sans antialiased min-h-screen transition-colors duration-200;
+    font-family: 'DzainTrueCopy', sans-serif;
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+  }
+  img, video, iframe {
+    max-width: 100%;
+  }
+}
+
+.is__sans {
+  font-family: 'DzainTrueCopy', sans-serif;
+}
+
+.is__text {
+  font-family: 'Dzain-TrueCopy Text', 'DzainTrueCopy', serif;
+}
+
+.is__inline {
+  font-family: 'DzainTrueCopy Inline', sans-serif;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: 'DzainTrueCopy', sans-serif;
+  @apply font-bold text-neutral-900 dark:text-neutral-50 mt-6 mb-3;
+}
+
+.prose p {
+  font-family: 'Dzain-TrueCopy Text', 'DzainTrueCopy', serif;
+  @apply text-neutral-700 dark:text-neutral-300 leading-relaxed mb-5 text-lg sm:text-xl;
+}
+
+.prose blockquote {
+  font-family: 'Dzain-TrueCopy Text', 'DzainTrueCopy', serif;
+  @apply border-l-4 border-brand-600 pl-4 my-6 italic text-neutral-800 dark:text-neutral-200 bg-brand-50/50 dark:bg-brand-950/40 py-2.5 rounded-r-lg text-lg sm:text-xl;
+}
+
+.prose ul {
+  @apply list-disc list-inside space-y-2 mb-4 text-neutral-700 dark:text-neutral-300 text-base sm:text-lg;
+}
