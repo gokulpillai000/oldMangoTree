@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, registerUser, getCurrentSession } from '@/lib/auth';
 
-export async function GET() {
-  const session = getCurrentSession();
-  return NextResponse.json({ session });
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  const session = getCurrentSession(req);
+  return NextResponse.json(
+    { session },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    }
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -12,7 +23,14 @@ export async function POST(req: NextRequest) {
     const { action, email, password, name } = body;
 
     if (action === 'logout') {
-      const response = NextResponse.json({ success: true, session: null });
+      const response = NextResponse.json(
+        { success: true, session: null },
+        {
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+          },
+        }
+      );
       response.cookies.delete('omt_auth_session');
       return response;
     }
@@ -32,10 +50,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    const response = NextResponse.json({ success: true, session: result });
-    response.cookies.set('omt_auth_session', JSON.stringify(result), {
+    const token = Buffer.from(JSON.stringify(result)).toString('base64');
+    const response = NextResponse.json(
+      { success: true, session: result, token },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
+
+    // Only mark secure if actually served via HTTPS
+    const isHttps = req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:';
+
+    response.cookies.set('omt_auth_session', encodeURIComponent(JSON.stringify(result)), {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps,
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days

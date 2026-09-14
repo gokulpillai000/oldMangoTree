@@ -2,13 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PenTool, Calendar, Lock, CheckCircle2, AlertCircle, ArrowLeft, Send, Tag, Folder, FileText, BookOpen, ExternalLink } from 'lucide-react';
+import { PenTool, Calendar, Lock, CheckCircle2, AlertCircle, ArrowLeft, Send, Tag, Folder, FileText, BookOpen, ExternalLink, KeyRound, ArrowRight } from 'lucide-react';
 import { POPULAR_TAG_SUGGESTIONS, determineCategoryFromTags } from '@/lib/categoryMapper';
 import { formatDate } from '@/lib/format';
+import { getStoredSession, setStoredSession, getAuthHeaders, clientAuthenticate } from '@/lib/clientAuth';
 
 export default function EditorialDeskPage() {
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // In-place direct login state for unauthenticated users
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Editorial Desk State
   const [activeTab, setActiveTab] = useState<'editor' | 'published'>('editor');
@@ -30,7 +37,10 @@ export default function EditorialDeskPage() {
   const [resultMsg, setResultMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadArticles = () => {
-    fetch('/api/publish')
+    fetch('/api/publish', {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.articles) {
@@ -41,17 +51,83 @@ export default function EditorialDeskPage() {
   };
 
   useEffect(() => {
-    fetch('/api/auth')
+    // 1. Instantly check localStorage for zero-delay mobile recovery
+    const stored = getStoredSession();
+    if (stored) {
+      setSession(stored);
+      setLoading(false);
+      loadArticles();
+    }
+
+    // 2. Sync with server
+    fetch('/api/auth', {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data && data.session) {
           setSession(data.session);
+          setStoredSession(data.session);
           loadArticles();
+        } else if (!stored) {
+          setSession(null);
         }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDirectLogin = async (e?: React.FormEvent, customEmail?: string, customPassword?: string) => {
+    if (e) e.preventDefault();
+    setLoginError('');
+    setLoginLoading(true);
+
+    const submitEmail = (customEmail || loginEmail).trim();
+    const submitPass = customPassword || loginPassword;
+
+    try {
+      let sessionData = null;
+
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            action: 'signin',
+            email: submitEmail,
+            password: submitPass,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.session) {
+            sessionData = data.session;
+          }
+        }
+      } catch (networkErr) {
+        // Static hosting mode
+      }
+
+      if (!sessionData) {
+        const fallback = clientAuthenticate(submitEmail, submitPass);
+        if ('error' in fallback) {
+          throw new Error(fallback.error);
+        }
+        sessionData = fallback;
+      }
+
+      setStoredSession(sessionData);
+      setSession(sessionData);
+      loadArticles();
+    } catch (err: any) {
+      setLoginError(err.message || 'An error occurred during sign in');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   const autoCategory = determineCategoryFromTags(selectedTags);
 
@@ -103,7 +179,11 @@ export default function EditorialDeskPage() {
 
       const res = await fetch('/api/publish', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
 
@@ -146,24 +226,106 @@ export default function EditorialDeskPage() {
 
   if (!session) {
     return (
-      <div className="max-w-md mx-auto py-16 text-center space-y-6">
-        <div className="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center mx-auto shadow">
-          <Lock className="w-8 h-8" />
-        </div>
-        <div className="space-y-2">
-          <h1 className="font-serif text-3xl font-bold text-neutral-900 dark:text-neutral-50">
-            Editorial Desk Access Only
+      <div className="max-w-md mx-auto py-10 sm:py-16 px-4 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 flex items-center justify-center mx-auto shadow">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-50">
+            Editorial Desk / ഡെസ്ക്
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 text-sm">
-            Sign in to your editorial account to write, manage, and schedule webzine articles.
+          <p className="text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm">
+            Sign in to access publishing, scheduling, and magazine issue management tools.
           </p>
         </div>
-        <Link
-          href="/"
-          className="inline-block px-6 py-3 rounded-xl bg-brand-700 text-white font-bold text-sm shadow hover:bg-brand-600 transition-colors"
-        >
-          Return to Home &amp; Sign In
-        </Link>
+
+        {/* 1-Tap Quick Login Presets for Mobile */}
+        <div className="p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 space-y-2.5">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            1-Tap Quick Sign In:
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              disabled={loginLoading}
+              onClick={() => handleDirectLogin(undefined, 'gokulpillai000@gmail.com', 'editorial123')}
+              className="flex-1 px-3.5 py-2.5 text-xs font-semibold text-left rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-between shadow-xs"
+            >
+              <span>Gokul (Publisher)</span>
+              <span className="text-[10px] text-brand-600 font-bold">Sign In →</span>
+            </button>
+            <button
+              type="button"
+              disabled={loginLoading}
+              onClick={() => handleDirectLogin(undefined, 'editor@oldmangotree.media', 'editor123')}
+              className="flex-1 px-3.5 py-2.5 text-xs font-semibold text-left rounded-xl bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:border-brand-500 hover:text-brand-600 transition-all flex items-center justify-between shadow-xs"
+            >
+              <span>Kamalram (Editor)</span>
+              <span className="text-[10px] text-brand-600 font-bold">Sign In →</span>
+            </button>
+          </div>
+        </div>
+
+        {loginError && (
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs text-center font-medium">
+            {loginError}
+          </div>
+        )}
+
+        <form onSubmit={handleDirectLogin} className="bg-paper-card dark:bg-paper-cardDark p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-md space-y-4">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="editor@oldmangotree.media"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="email"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              Password
+            </label>
+            <input
+              type="password"
+              required
+              placeholder="••••••••"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="current-password"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loginLoading}
+            className="w-full py-3 rounded-xl bg-brand-700 hover:bg-brand-600 active:scale-[0.99] text-white font-bold text-sm shadow transition-all flex items-center justify-center gap-2"
+          >
+            {loginLoading ? 'Signing In...' : 'Sign In to Editorial Desk →'}
+          </button>
+        </form>
+
+        <div className="text-center">
+          <Link
+            href="/"
+            className="text-xs font-semibold text-neutral-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+          >
+            ← Return to Webzine Homepage
+          </Link>
+        </div>
       </div>
     );
   }

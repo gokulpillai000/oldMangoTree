@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Header } from '@/components/Header';
@@ -64,16 +65,16 @@ export default function RootLayout({
                       Departments &amp; Media | വിഭാഗങ്ങൾ
                     </h4>
                     <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600 dark:text-neutral-400">
-                      <a href="/politics" className="hover:text-brand-600 transition-colors">Politics (രാഷ്ട്രീയം)</a>
-                      <a href="/literature" className="hover:text-brand-600 transition-colors">Literature (സാഹിത്യം)</a>
-                      <a href="/videos" className="hover:text-brand-600 transition-colors">Videos (വീഡിയോകൾ)</a>
-                      <a href="/series" className="hover:text-brand-600 transition-colors">Series (പരമ്പരകൾ)</a>
-                      <a href="/magazine" className="hover:text-brand-600 transition-colors">Webzine Packets</a>
-                      <a href="/podcasts" className="hover:text-brand-600 transition-colors">Audio Hub (ഓഡിയോ)</a>
-                      <a href="/media" className="hover:text-brand-600 transition-colors">Media (മാധ്യമം)</a>
-                      <a href="/entertainment" className="hover:text-brand-600 transition-colors">Entertainment</a>
-                      <a href="/cinema" className="hover:text-brand-600 transition-colors">Cinema &amp; Film Studies</a>
-                      <a href="/sports" className="hover:text-brand-600 transition-colors">Sports &amp; Football</a>
+                      <Link href="/politics" className="hover:text-brand-600 transition-colors">Politics (രാഷ്ട്രീയം)</Link>
+                      <Link href="/literature" className="hover:text-brand-600 transition-colors">Literature (സാഹിത്യം)</Link>
+                      <Link href="/videos" className="hover:text-brand-600 transition-colors">Videos (വീഡിയോകൾ)</Link>
+                      <Link href="/series" className="hover:text-brand-600 transition-colors">Series (പരമ്പരകൾ)</Link>
+                      <Link href="/magazine" className="hover:text-brand-600 transition-colors">Webzine Packets</Link>
+                      <Link href="/podcasts" className="hover:text-brand-600 transition-colors">Audio Hub (ഓഡിയോ)</Link>
+                      <Link href="/media" className="hover:text-brand-600 transition-colors">Media (മാധ്യമം)</Link>
+                      <Link href="/entertainment" className="hover:text-brand-600 transition-colors">Entertainment</Link>
+                      <Link href="/cinema" className="hover:text-brand-600 transition-colors">Cinema &amp; Film Studies</Link>
+                      <Link href="/sports" className="hover:text-brand-600 transition-colors">Sports &amp; Football</Link>
                     </div>
                   </div>
 
@@ -83,13 +84,13 @@ export default function RootLayout({
                       Information &amp; Policies
                     </h4>
                     <div className="flex flex-col space-y-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                      <a href="/pages/about-us" className="hover:text-brand-600 transition-colors">About Us (ഞങ്ങളെക്കുറിച്ച്)</a>
-                      <a href="/the-team" className="hover:text-brand-600 transition-colors">The Team (എഡിറ്റോറിയൽ സമിതി)</a>
-                      <a href="/pages/contact-us" className="hover:text-brand-600 transition-colors">Contact Us (ബന്ധപ്പെടുക)</a>
-                      <a href="/pages/grievance-redressal" className="hover:text-brand-600 transition-colors">Grievance Redressal (പരാതി പരിഹാരം)</a>
-                      <a href="/pages/privacy-policy" className="hover:text-brand-600 transition-colors">Privacy Policy (സ്വകാര്യതാ നയം)</a>
-                      <a href="/pages/terms-of-use" className="hover:text-brand-600 transition-colors">Terms of Use (ഉപയോഗ നിബന്ധനകൾ)</a>
-                      <a href="/pages/refund-policy" className="hover:text-brand-600 transition-colors">Refund Policy (റീഫണ്ട് നയം)</a>
+                      <Link href="/pages/about-us" className="hover:text-brand-600 transition-colors">About Us (ഞങ്ങളെക്കുറിച്ച്)</Link>
+                      <Link href="/the-team" className="hover:text-brand-600 transition-colors">The Team (എഡിറ്റോറിയൽ സമിതി)</Link>
+                      <Link href="/pages/contact-us" className="hover:text-brand-600 transition-colors">Contact Us (ബന്ധപ്പെടുക)</Link>
+                      <Link href="/pages/grievance-redressal" className="hover:text-brand-600 transition-colors">Grievance Redressal (പരാതി പരിഹാരം)</Link>
+                      <Link href="/pages/privacy-policy" className="hover:text-brand-600 transition-colors">Privacy Policy (സ്വകാര്യതാ നയം)</Link>
+                      <Link href="/pages/terms-of-use" className="hover:text-brand-600 transition-colors">Terms of Use (ഉപയോഗ നിബന്ധനകൾ)</Link>
+                      <Link href="/pages/refund-policy" className="hover:text-brand-600 transition-colors">Refund Policy (റീഫണ്ട് നയം)</Link>
                     </div>
                   </div>
                 </div>

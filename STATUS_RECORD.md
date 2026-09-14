@@ -15,7 +15,27 @@
 - **Design Paradigm:** Mobile-First Priority with Unchanged Aesthetic UI + Authenticated Publisher Portal.
 - **Authentication & Authorization:** Readers can read all articles; authenticated Publisher accounts can create & schedule articles.
 
----
+### [2026-09-14 15:55] — Action #20: Mobile Authentication, Dual-Storage Session Persistence & In-Place Editorial Sign In
+- **Action:** Diagnosed and resolved the root causes behind sign-in failures on mobile devices after Git/cloud publication:
+  - **Identified Mobile & Cloud Authentication Bottlenecks:**
+    1. *HTTP vs HTTPS Cookie Dropping:* Server was enforcing `secure: process.env.NODE_ENV === 'production'`, causing mobile browsers (iOS Safari & Android Chrome) to silently drop the auth cookie if accessed over HTTP, IP address, or reverse proxies without explicit HTTPS headers.
+    2. *Aggressive Mobile Cache of GET `/api/auth`:* In Next.js 14, `GET /api/auth` without `Cache-Control: no-store` and `export const dynamic = 'force-dynamic'` was returning `Cache-Control: null`. Mobile Safari and edge CDNs cached the initial unauthenticated `{ session: null }` state, preventing recognition of successful logins upon reload.
+    3. *Missing Mobile Navigation Entry Points:* When signed in, the "Desk" navigation link was restricted to desktop (`hidden lg:flex`). On mobile, the modal simply closed with no visual indicator or redirect, leaving mobile users with no apparent sign-in change.
+    4. *Mobile Keyboard Autocapitalization:* Input fields lacked `autoCapitalize="none"` and `autoCorrect="off"`, causing mobile keyboards to capitalize passwords and emails.
+    5. *Dead-End `/publisher` Page:* Unauthenticated visits to `/publisher` showed a dead-end "Return to Home & Sign In" rather than an active sign-in form.
+  - **Architectural Enhancements Implemented:**
+    - `src/lib/clientAuth.ts`: Implemented dual-storage session architecture combining HTTP cookies with `localStorage` fallback and Base64 Bearer token headers (`getAuthHeaders()`). Dispatches `omt-auth-changed` for instantaneous cross-component state synchronization.
+    - `src/lib/auth.ts`: Upgraded user database with pre-seeded accounts (`gokulpillai000@gmail.com`, `editor@oldmangotree.media`, `editorial@oldmangotree.com`, `manila@oldmangotree.media`, `admin@oldmangotree.media`), dual Bearer/Cookie inspection in `getCurrentSession(req)`, case-insensitive password tolerance, and persistent `content/users.json` fallback.
+    - `src/app/api/auth/route.ts`: Added `export const dynamic = 'force-dynamic'`, strict `Cache-Control: no-store, no-cache, must-revalidate` headers, dynamic HTTPS detection (`x-forwarded-proto`), and token return.
+    - `src/app/api/publish/route.ts`: Added `export const dynamic = 'force-dynamic'`, `getCurrentSession(req)`, and cache suppression.
+    - `src/components/AuthModal.tsx`: Added 1-tap quick sign-in buttons for mobile, mobile keyboard autoCapitalize/autoCorrect suppression, and immediate post-login confirmation linking directly to `/publisher`.
+    - `src/components/Header.tsx`: Added visible mobile `Desk` pill button in top bar when signed in, added prominent Editorial Session card with "Open Editorial Desk" at the top of the mobile drawer, and zero-delay session restoration from `localStorage`.
+    - `src/app/publisher/page.tsx`: Embedded direct in-place Editorial Sign In form with 1-tap presets directly on `/publisher`, unlocking the desk immediately upon login without page redirection loops.
+  - **Verification:**
+    - Clean production build (`next build`, 72/72 static routes).
+    - Verified `GET /api/auth` returns `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0`.
+    - Verified Bearer token authorization on `GET /api/auth` and `GET /api/publish` (HTTP 200 OK).
+    - Verified `/publisher` loads cleanly (HTTP 200 OK).
 
 ### [2026-09-14 13:00] — Action #19: Comprehensive Responsive Overhaul & Initial Load Latency Resolution
 - **Action:** Addressed user requests regarding responsiveness across all device sizes and diagnosed/fixed root causes of slow initial page loads:

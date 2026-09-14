@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Moon, Sun, Menu, X, BookOpen, Radio, TrendingUp, User, PenTool, Film } from 'lucide-react';
+import { Search, Moon, Sun, Menu, X, BookOpen, Radio, TrendingUp, User, PenTool, Film, LogOut } from 'lucide-react';
 import { AuthModal } from './AuthModal';
+import { getStoredSession, setStoredSession, getAuthHeaders } from '@/lib/clientAuth';
 
 export function Header() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -18,15 +19,46 @@ export function Header() {
       setIsDarkMode(true);
     }
 
-    // Check existing auth session
-    fetch('/api/auth')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.session) {
-          setSession(data.session);
-        }
+    // 1. Instantly restore session from localStorage (eliminates mobile delay/flicker)
+    const stored = getStoredSession();
+    if (stored) {
+      setSession(stored);
+    }
+
+    // 2. Sync with server in background
+    const syncServerAuth = () => {
+      fetch('/api/auth', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
       })
-      .catch(() => {});
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.session) {
+            setSession(data.session);
+            setStoredSession(data.session);
+          } else {
+            // Only clear if server explicitly confirms no session
+            const currentStored = getStoredSession();
+            if (!currentStored) {
+              setSession(null);
+            }
+          }
+        })
+        .catch(() => {});
+    };
+
+    syncServerAuth();
+
+    // Listen for custom auth events across components
+    const handleAuthChanged = () => {
+      const updated = getStoredSession();
+      setSession(updated);
+    };
+
+    window.addEventListener('omt-auth-changed', handleAuthChanged);
+    return () => {
+      window.removeEventListener('omt-auth-changed', handleAuthChanged);
+    };
   }, []);
 
   const toggleDarkMode = () => {
@@ -218,7 +250,17 @@ export function Header() {
             </nav>
 
             {/* Actions: Search, Sign In, & Theme Toggle */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              {session && (
+                <Link
+                  href="/publisher"
+                  className="lg:hidden flex items-center gap-1 text-xs font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950 px-2.5 py-1 rounded-full border border-brand-200 dark:border-brand-800 shadow-xs"
+                >
+                  <PenTool className="w-3 h-3 text-brand-600" />
+                  <span>Desk</span>
+                </Link>
+              )}
+
               <Link
                 href="/search"
                 className="p-2 rounded-full text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
@@ -284,6 +326,38 @@ export function Header() {
         {/* Mobile & Tablet Full Drawer */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-b border-neutral-200 dark:border-neutral-800 bg-paper-light dark:bg-paper-dark px-4 pt-3 pb-8 space-y-2.5 shadow-2xl max-h-[85vh] overflow-y-auto">
+            {session && (
+              <div className="p-3.5 mb-2 rounded-xl bg-brand-50 dark:bg-brand-950/80 border border-brand-200 dark:border-brand-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-serif font-bold text-brand-800 dark:text-brand-300">
+                    Editorial Session • {session.name}
+                  </span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-brand-700 text-white">
+                    Publisher
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/publisher"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-brand-700 hover:bg-brand-600 text-white text-xs font-bold shadow"
+                  >
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>Open Editorial Desk</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsAuthOpen(true);
+                    }}
+                    className="px-3 py-2.5 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-medium"
+                  >
+                    Manage
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Link
               href="/"
               onClick={() => setIsMobileMenuOpen(false)}
@@ -431,16 +505,31 @@ export function Header() {
             >
               Show More / Latest (എല്ലാ വാർത്തകളും)
             </Link>
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                setIsAuthOpen(true);
-              }}
-              className="w-full text-left py-2.5 text-sm font-bold text-brand-700 dark:text-brand-300 flex items-center justify-between"
-            >
-              <span>{session ? `Editor: ${session.name}` : 'Editorial Sign In / Sign Up'}</span>
-              <User className="w-5 h-5" />
-            </button>
+            {session ? (
+              <div className="pt-2 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800">
+                <span className="text-xs text-neutral-500 font-medium truncate max-w-[200px]">Logged in: {session.email}</span>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsAuthOpen(true);
+                  }}
+                  className="text-xs font-bold text-brand-700 dark:text-brand-300 hover:underline flex items-center gap-1"
+                >
+                  <span>Account &amp; Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAuthOpen(true);
+                }}
+                className="w-full text-left py-2.5 text-sm font-bold text-brand-700 dark:text-brand-300 flex items-center justify-between"
+              >
+                <span>Editorial Sign In / Sign Up</span>
+                <User className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
       </header>

@@ -27,10 +27,12 @@ function htmlToMarkdown(htmlContent: string): string {
   return md.trim();
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     // Check authorization: Session cookie OR Bearer API token
-    const session = getCurrentSession();
+    const session = getCurrentSession(req);
     const authHeader = req.headers.get('authorization');
     const isAppsScriptAuth = authHeader && (authHeader.startsWith('Bearer ') || authHeader.includes('omt_publish_token'));
 
@@ -157,15 +159,26 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = getCurrentSession();
+    const session = getCurrentSession(req);
     if (!session) {
-      return NextResponse.json({ error: 'Please sign in to view published articles.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Please sign in to view published articles.' },
+        {
+          status: 401,
+          headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+        }
+      );
     }
 
     const articles = getAllArticles(true);
-    return NextResponse.json({ articles });
+    return NextResponse.json(
+      { articles },
+      {
+        headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to load articles' }, { status: 500 });
   }
